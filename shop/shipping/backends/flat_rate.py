@@ -3,19 +3,16 @@
 from decimal import Decimal
 from django.conf import settings
 from django.conf.urls.defaults import patterns, url
+from shop.shipping.shipping_backend_base import BaseShippingBackend
 from django.shortcuts import render_to_response
 
-class FlatRateShipping(object):
+class FlatRateShipping(BaseShippingBackend):
     '''
     This is just an example of a possible flat-rate shipping module, that 
     charges a flat rate defined in settings.SHOP_SHIPPING_FLAT_RATE
     '''
     url_namespace = 'flat' 
     backend_name = 'Flat rate'
-    
-    def __init__(self, shop):
-        self.shop = shop # This is the shop reference, it allows this backend
-        # to interact with it in a tidy way (look ma', no imports!)
     
     def view_process_order(self,request):
         '''
@@ -29,7 +26,7 @@ class FlatRateShipping(object):
         self.shop.add_shipping_costs(self.shop.get_order(request), 
                                      'Flat shipping',
                                      Decimal(settings.SHOP_SHIPPING_FLAT_RATE))
-        return self.shop.finished() # That's an HttpResponseRedirect
+        return self.finished() # That's an HttpResponseRedirect
     
     def view_display_fees(self,request):
         '''
