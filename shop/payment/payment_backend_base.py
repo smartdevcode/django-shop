@@ -5,8 +5,7 @@ This file defines the interafces one should implement when either creating a new
 payment module or willing to use modules with another shop system.
 '''
 from decimal import Decimal
-from django.http import HttpResponseRedirect
-from shop.backend_base import BaseBackendAPI
+from shop.backend_base import BaseBackendAPI, BaseBackend
 
 class PaymentBackendAPI(BaseBackendAPI):
     '''
@@ -38,17 +37,38 @@ class PaymentBackendAPI(BaseBackendAPI):
         
     def set_payment_method(self, order, method, save=True):
         '''
-        Sets the payment mthod on the order object to whatever is specified in
+        Sets the payment method on the order object to whatever is specified in
         the method argument (should be a String)
         '''
         order.payment_method = method
         if save:
             order.save()
         
-    def finished(self):
+class BasePaymentBackend(BaseBackend):
+    '''
+    This is the base class for all payment backends to implement.
+    
+    The goal is to be able to register a few payment modules, and let one of 
+    them be selected at runtime by the shopper.
+    
+    Class members:
+    
+    url_namespace 
+    backend_name
+    shop
+    '''
+    
+    def __init__(self, shop=PaymentBackendAPI()):
         '''
-        A helper for backends, so that they can call this when their job
-        is finished i.e. The payment has been processed from a user perspective
-        This will redirect to the "Thanks for your order" page.
+        Make sure the shop helper is of the right type, then call super()
         '''
-        return HttpResponseRedirect('thanks_for_your_order')
+        self.shop = shop
+        super(BasePaymentBackend, self).__init__()
+        
+    def get_urls(self):
+        '''
+        Return a set of patterns() or urls() to hook to the site's main url
+        resolver.
+        This allows payment systems to register urls for callback, or to 
+        maintain a set of own views / templates
+        '''
