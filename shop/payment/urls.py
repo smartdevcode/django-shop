@@ -8,8 +8,7 @@ http://www.example.com/shop/pay/pay-on-delivery
 ...
 '''
 from django.conf.urls.defaults import patterns
-from shop.backends_pool import backends_pool
-
+from shop.backend_base import backends_pool
 
 urlpatterns = patterns('')
 
