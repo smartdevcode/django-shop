@@ -234,7 +234,6 @@ class OrderConversionTestCase(TestCase):
             
     def test_03_order_addresses_match_user_preferences(self):
         self.create_fixtures()
-        
         self.cart.add_product(self.product)
         self.cart.update()
         self.cart.save()
@@ -266,16 +265,7 @@ class OrderConversionTestCase(TestCase):
         calculations on products (i.e. shipping based on weight/size...)
         '''
         self.create_fixtures()
-        
-        # Add another product to the database, so it's ID isn't 1
-        product2 = Product.objects.create(name="TestPrduct2",
-        slug="TestPrduct2",
-        short_description="TestPrduct2",
-        long_description="TestPrduct2",
-        active=True,
-        unit_price=self.PRODUCT_PRICE)
-        
-        self.cart.add_product(product2)
+        self.cart.add_product(self.product)
         self.cart.update()
         self.cart.save()
         
@@ -289,9 +279,8 @@ class OrderConversionTestCase(TestCase):
         
         # take the first item from the order:
         oi = OrderItem.objects.filter(order=o)[0]
-        
-        self.assertEqual(oi.product_reference, str(product2.id))
+        self.assertEqual(oi.product_reference, str(self.product.id))
         
         # Lookup works?
         prod = oi.product
-        self.assertEqual(prod,product2)
+        self.assertEqual(prod,self.product)
