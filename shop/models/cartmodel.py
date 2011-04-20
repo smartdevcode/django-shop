@@ -102,6 +102,7 @@ class Cart(models.Model):
         Remove all cart items
         """
         self.items.all().delete()
+        self.delete()
 
     @property
     def total_quantity(self):
@@ -136,7 +137,7 @@ class CartItem(models.Model):
         self.line_total = Decimal('0.0')
         
     def update(self):
-        self.line_subtotal = self.product.get_price() * self.quantity
+        self.line_subtotal = self.product.get_specific().get_price() * self.quantity
         self.line_total = self.line_subtotal
         
         for modifier in cart_modifiers_pool.get_modifiers_list():
