@@ -22,11 +22,8 @@ def get_or_create_cart(request):
             # There is a session
             cart_id = session.get('cart_id')
             if cart_id:
-                try:
-                    cart = Cart.objects.get(pk=cart_id)
-                except Cart.DoesNotExist:
-                    cart = None
-            if not cart:
+                cart = Cart.objects.get(pk=cart_id)
+            else:
                 cart = Cart.objects.create()
                 session['cart_id'] = cart.id
     return cart
