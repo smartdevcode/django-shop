@@ -5,7 +5,7 @@ from order import ( OrderConversionTestCase, OrderTestCase, OrderUtilTestCase,
 from client import ClientTestCase
 from payment import PayOnDeliveryTestCase, GeneralPaymentBackendTestCase
 from util import CurrencyFieldTestCase, CartUtilsTestCase
-from shipping import GeneralShippingBackendTestCase, ShippingApiTestCase
+from shipping import GeneralShippingBackendTestCase
 from product import ProductTestCase
 from views import ( ProductDetailViewTestCase, CartDetailsViewTestCase,
         CartViewTestCase, OrderListViewTestCase, CheckoutViewTestCase )
