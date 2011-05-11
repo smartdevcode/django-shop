@@ -15,8 +15,8 @@ urlpatterns = patterns('')
 for backend in backends_pool.get_shipping_backends_list():
     regexp = "^%s/" % backend.url_namespace
     urls = backend.get_urls()
-    pattern = patterns('',
+    patterns = patterns('',
         (regexp, include(backend.get_urls()))
     )
 
-    urlpatterns = pattern + urlpatterns
+    urlpatterns = patterns + urlpatterns
