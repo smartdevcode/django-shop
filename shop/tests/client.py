@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.models import User
-from shop.clientmodel.models import Client, Country, Address
+from shop.models.clientmodel import Client, Country, Address
 from django.test.testcases import TestCase
 
 class ClientTestCase(TestCase):
@@ -38,17 +38,16 @@ class ClientTestCase(TestCase):
         self.address2.is_billing = True
         self.address2.is_shipping = False
         self.address2.save()
-
-#   COMMENTED OUT BECAUSE OF THE MOVING OF CLIENTMODEL
-#    def test_01_shipping_address_shortcut_works(self):
-#        self.create_fixtures()
-#        add = self.client.shipping_address()
-#        self.assertEqual(add, self.address)
     
-#    def test_02_billing_address_shortcut_works(self):
-#        self.create_fixtures()
-#        add = self.client.billing_address()
-#        self.assertEqual(add, self.address2)
+    def test_01_shipping_address_shortcut_works(self):
+        self.create_fixtures()
+        add = self.client.shipping_address()
+        self.assertEqual(add, self.address)
+    
+    def test_02_billing_address_shortcut_works(self):
+        self.create_fixtures()
+        add = self.client.billing_address()
+        self.assertEqual(add, self.address2)
         
     def test_03_unicode_method_works(self):
         self.create_fixtures()
