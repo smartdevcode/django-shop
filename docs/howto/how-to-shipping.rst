@@ -2,6 +2,7 @@
 How to create a shipping backend 
 ==================================
 
+* Shipping backends must subclass shop.shipping.shipping_backend_base.BaseShippingBackend
 * Shipping backends must be listed in settings.SHOP_SHIPPING_BACKENDS
 
 Shop interface
@@ -14,7 +15,6 @@ the backends hold a reference to the shop instead.
 The reference interface for shipping backends is located at 
 shop.shipping.shipping_backend_base.ShippingBackendAPI 
 
-.. _shipping-backend-interface:
 
 Backend interface
 ==================
