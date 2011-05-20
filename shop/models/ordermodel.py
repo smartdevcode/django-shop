@@ -7,6 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse
 
 from shop.models.cartmodel import CartItem
+from shop.models.clientmodel import Client
 from shop.models.productmodel import Product
 from shop.util.fields import CurrencyField
 
@@ -33,8 +34,37 @@ class OrderManager(models.Manager):
         o.order_subtotal = cart.subtotal_price
         o.order_total = cart.total_price
         
-        o.save()
+        user = cart.user
+        client = None
         
+        if user:
+            try:
+                client = cart.user.client
+            except Client.DoesNotExist:
+                client = None
+            
+        if user and client:
+            
+            ship_address = cart.user.client.addresses.filter(is_shipping=True)[0] 
+            bill_address = cart.user.client.addresses.filter(is_billing=True)[0]
+        
+        
+            o.shipping_name = "%s %s" % (cart.user.first_name, cart.user.last_name)
+            o.shipping_address = ship_address.address
+            o.shipping_address2 = ship_address.address2
+            o.shipping_city = ship_address.city
+            o.shipping_zip_code = ship_address.zip_code
+            o.shipping_state = ship_address.state
+            o.shipping_country = ship_address.country.name
+            
+            o.billing_name = "%s %s" % (cart.user.first_name, cart.user.last_name)
+            o.billing_address = bill_address.address
+            o.billing_address2 = bill_address.address2
+            o.billing_city = bill_address.city
+            o.billing_zip_code = bill_address.zip_code
+            o.billing_state = bill_address.state
+            o.billing_country = bill_address.country.name
+        o.save()
         # Let's serialize all the extra price arguments in DB
         for label, value in cart.extra_price_fields:
             eoi = ExtraOrderPriceField()
@@ -144,7 +174,7 @@ class Order(models.Model):
     
     objects = OrderManager()
     
-    class Meta:
+    class Meta(object):
         app_label = 'shop'
         verbose_name = _('Order')
         verbose_name_plural = _('Orders')
@@ -181,38 +211,6 @@ class Order(models.Model):
     def get_absolute_url(self):
         return reverse('order_detail', kwargs={'pk': self.pk })
 
-    def set_billing_address(self, billing_address, billing_city, billing_zip_code, 
-        billing_state, billing_country, billing_address2='', billing_name=''):
-        """Sets the billing address for this order."""
-        if billing_name:
-            self.billing_name = billing_name
-        else:
-            self.billing_name  = "%s %s" % (self.user.first_name, self.user.last_name)
-
-        self.billing_address = billing_address
-        self.billing_address2 = billing_address2
-        self.billing_city = billing_city
-        self.billing_zip_code = billing_zip_code
-        self.billing_state = billing_state
-        self.billing_country = billing_country
-        self.save()
-    
-    def set_shipping_address(self, shipping_address, shipping_city, 
-        shipping_zip_code, shipping_state, shipping_country,
-        shipping_address2='', shipping_name=''):
-        """Sets the shipping address for this order."""
-        if shipping_name:
-            self.shipping_name = shipping_name
-        else:
-            self.shipping_name = "%s %s" % (self.user.first_name, self.user.last_name)
-
-        self.shipping_address = shipping_address
-        self.shipping_address2 = shipping_address2
-        self.shipping_city = shipping_city
-        self.shipping_zip_code = shipping_zip_code
-        self.shipping_state = shipping_state
-        self.shipping_country = shipping_country
-        self.save()
 
 class OrderItem(models.Model):
     """
@@ -232,7 +230,7 @@ class OrderItem(models.Model):
     line_subtotal = CurrencyField(verbose_name=_('Line subtotal'))
     line_total = CurrencyField(verbose_name=_('Line total'))
     
-    class Meta:
+    class Meta(object):
         app_label = 'shop'
         verbose_name = _('Order item')
         verbose_name_plural = _('Order items')
@@ -250,7 +248,7 @@ class OrderExtraInfo(models.Model):
             verbose_name=_('Order'))
     text = models.TextField(verbose_name=_('Extra info'))
 
-    class Meta:
+    class Meta(object):
         app_label = 'shop'
         verbose_name = _('Order extra info')
         verbose_name_plural = _('Order extra info')
@@ -269,7 +267,7 @@ class ExtraOrderPriceField(models.Model):
     is_shipping = models.BooleanField(default=False, editable=False,
             verbose_name=_('Is shipping'))
 
-    class Meta:
+    class Meta(object):
         app_label = 'shop'
         verbose_name = _('Extra order price field')
         verbose_name_plural = _('Extra order price fields')
@@ -284,7 +282,7 @@ class ExtraOrderItemPriceField(models.Model):
     label = models.CharField(max_length=255, verbose_name=_('Label'))
     value = CurrencyField(verbose_name=_('Amount'))
     
-    class Meta:
+    class Meta(object):
         app_label = 'shop'
         verbose_name = _('Extra order item price field')
         verbose_name_plural = _('Extra order item price fields')
@@ -304,7 +302,7 @@ class OrderPayment(models.Model):
             verbose_name=_('Payment method'),
             help_text=_("The payment backend use to process the purchase"))
     
-    class Meta:
+    class Meta(object):
         app_label = 'shop'
         verbose_name = _('Order payment')
         verbose_name_plural = _('Order payments')
