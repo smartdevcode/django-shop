@@ -100,7 +100,6 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'polymorphic', # We need polymorphic installed for the shop
     'shop', # The django SHOP application
-    'shop.clientmodel',
     'project', # the test project application
 )
 
