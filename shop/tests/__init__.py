@@ -3,10 +3,9 @@ from cart_modifiers import ( CartModifiersTestCase,
         TenPercentPerItemTaxModifierTestCase )
 from order import ( OrderConversionTestCase, OrderTestCase, OrderUtilTestCase,
     OrderPaymentTestCase )
-#from client import ClientTestCase
+from client import ClientTestCase
 from payment import PayOnDeliveryTestCase, GeneralPaymentBackendTestCase
-from util import (CurrencyFieldTestCase, CartUtilsTestCase, LoaderTestCase, 
-                  AddressUtilTestCase)
+from util import CurrencyFieldTestCase, CartUtilsTestCase, LoaderTestCase
 from shipping import GeneralShippingBackendTestCase, ShippingApiTestCase
 from product import ProductTestCase, ProductStatisticsTestCase
 from views import ( ProductDetailViewTestCase, CartDetailsViewTestCase,
