@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ImproperlyConfigured
 from django.test.testcases import TestCase
 from shop.backends_pool import backends_pool
-from shop.models.clientmodel import Address, Client, Country
+from shop.addressmodel.models import Address, Country
 from shop.models.ordermodel import Order, OrderItem, ExtraOrderItemPriceField, \
     ExtraOrderPriceField
 from shop.payment.backends.pay_on_delivery import PayOnDeliveryBackend
@@ -36,29 +36,26 @@ class ValidMockPaymentBackend(NamedMockPaymentBackend):
 
 class GeneralPaymentBackendTestCase(TestCase):
     
-    def create_fixtures(self):
+    def setUp(self):
         self.user = User.objects.create(username="test", 
                                         email="test@example.com",
                                         first_name="Test",
                                         last_name = "Toto")
         backends_pool.use_cache = False
         
-    def test_01_enforcing_of_name_works(self):
-        self.create_fixtures()
+    def test_enforcing_of_name_works(self):
         MODIFIERS = ['shop.tests.payment.MockPaymentBackend']
         with SettingsOverride(SHOP_PAYMENT_BACKENDS=MODIFIERS):
             self.assertRaises(NotImplementedError, backends_pool.get_payment_backends_list)
 
-    def test_02_enforcing_of_namespace_works(self):
-        self.create_fixtures()
+    def test_enforcing_of_namespace_works(self):
         
         MODIFIERS = ['shop.tests.payment.NamedMockPaymentBackend']
         with SettingsOverride(SHOP_PAYMENT_BACKENDS=MODIFIERS):
             self.assertRaises(NotImplementedError, backends_pool.get_payment_backends_list)
             
         
-    def test_03_get_order_returns_sensible_nulls(self):
-        self.create_fixtures()
+    def test_get_order_returns_sensible_nulls(self):
         
         class MockRequest():
             user = self.user
@@ -68,39 +65,33 @@ class GeneralPaymentBackendTestCase(TestCase):
         self.assertEqual(order, None)
 
     def test_04_get_backends_from_pool(self):
-        self.create_fixtures()
         MODIFIERS = ['shop.tests.payment.ValidMockPaymentBackend']
         with SettingsOverride(SHOP_PAYMENT_BACKENDS=MODIFIERS):
             list = backends_pool.get_payment_backends_list()
             self.assertEqual(len(list), 1)
     
     def test_05_get_backends_from_empty_pool(self):
-        self.create_fixtures()
         MODIFIERS = []
         with SettingsOverride(SHOP_PAYMENT_BACKENDS=MODIFIERS):
             list = backends_pool.get_payment_backends_list()
             self.assertEqual(len(list), 0)
     
     def test_06_get_backends_from_non_path(self):
-        self.create_fixtures()
         MODIFIERS = ['blob']
         with SettingsOverride(SHOP_PAYMENT_BACKENDS=MODIFIERS):
             self.assertRaises(ImproperlyConfigured, backends_pool.get_payment_backends_list)
     
     def test_07_get_backends_from_non_module(self):
-        self.create_fixtures()
         MODIFIERS = ['shop.tests.IdontExist.IdontExistEither']
         with SettingsOverride(SHOP_PAYMENT_BACKENDS=MODIFIERS):
             self.assertRaises(ImproperlyConfigured, backends_pool.get_payment_backends_list)
             
     def test_08_get_backends_from_non_class(self):
-        self.create_fixtures()
         MODIFIERS = ['shop.tests.payment.IdontExistEither']
         with SettingsOverride(SHOP_PAYMENT_BACKENDS=MODIFIERS):
             self.assertRaises(ImproperlyConfigured, backends_pool.get_payment_backends_list)
             
     def test_09_get_backends_cache_works(self):
-        self.create_fixtures()
         MODIFIERS = ['shop.tests.payment.ValidMockPaymentBackend']
         with SettingsOverride(SHOP_PAYMENT_BACKENDS=MODIFIERS):
             backends_pool.use_cache = True
@@ -112,16 +103,12 @@ class GeneralPaymentBackendTestCase(TestCase):
         
 class PayOnDeliveryTestCase(TestCase):
     
-    def create_fixtures(self):
+    def setUp(self):
         self.user = User.objects.create(username="test", 
                                         email="test@example.com",
                                         first_name="Test",
                                         last_name = "Toto")
         self.user.save()
-        
-        self.client = Client()
-        self.client.user = self.user
-        self.client.save()
         
         self.country = Country.objects.create(name='CH')
         
@@ -157,8 +144,8 @@ class PayOnDeliveryTestCase(TestCase):
         ship_address = self.address
         bill_address = self.address2
         
-        self.order.shipping_name = "%s %s" %(self.address.client.user.first_name, 
-                                              self.address.client.user.last_name)
+        self.order.shipping_name = "%s %s" %(self.user.first_name, 
+                                              self.user.last_name)
         
         self.order.shipping_address = ship_address.address
         self.order.shipping_address2 = ship_address.address2
@@ -166,8 +153,8 @@ class PayOnDeliveryTestCase(TestCase):
         self.order.shipping_state = ship_address.state
         self.order.shipping_country = ship_address.country.name
         
-        self.order.shipping_name = "%s %s" %(self.address.client.user.first_name, 
-                                              self.address.client.user.last_name)
+        self.order.shipping_name = "%s %s" %(self.user.first_name, 
+                                              self.user.last_name)
         self.order.billing_address = bill_address.address
         self.order.billing_address2 = bill_address.address2
         self.order.billing_zip_code = bill_address.zip_code
@@ -201,8 +188,7 @@ class PayOnDeliveryTestCase(TestCase):
         eof.value = Decimal("10")
         eof.save()
     
-    def test_01_backend_returns_urls(self):
-        self.create_fixtures()
+    def test_backend_returns_urls(self):
         be = PayOnDeliveryBackend(shop=PaymentAPI())
         urls = be.get_urls()
         self.assertNotEqual(urls,None)
