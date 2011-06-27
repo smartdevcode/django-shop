@@ -10,7 +10,7 @@ class BaseCartModifier(object):
     settings.SHOP_CART_MODIFIERS setting.
     """
         
-    def process_cart_item(self, cart_item, state):
+    def process_cart_item(self, cart_item):
         """
         This will be called for every line item in the Cart:
         Line items typically contain: product, unit_price, quantity...
@@ -21,9 +21,6 @@ class BaseCartModifier(object):
         
         Overrides of this method should however update cart_item.current_total, 
         since it will potentially be used by other modifiers.
-        
-        The state parameter is only used to let implementations store temporary
-        information to pass between cart_item_modifers and cart_modifiers
         """
         field = self.get_extra_cart_item_price_field(cart_item)
         if field != None:
@@ -32,7 +29,7 @@ class BaseCartModifier(object):
             cart_item.extra_price_fields.append(field)
         return cart_item
     
-    def process_cart(self, cart, state):
+    def process_cart(self, cart):
         """
         This will be called once per Cart, after every line item was treated
         The subtotal for the cart is already known, but the Total is 0.
@@ -43,9 +40,6 @@ class BaseCartModifier(object):
         
         Subtotal is accessible, but total is still 0.0. Overrides are expected to
         update cart.current_total.
-        
-        The state parameter is only used to let implementations store temporary
-        information to pass between cart_item_modifers and cart_modifiers
         """
         field = self.get_extra_cart_price_field(cart)
         if field != None:
