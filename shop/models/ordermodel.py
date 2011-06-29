@@ -6,6 +6,9 @@ from django.core.urlresolvers import reverse
 from django.db import models, transaction
 from django.db.models.aggregates import Sum
 from django.utils.translation import ugettext_lazy as _
+from django.core.urlresolvers import reverse
+from django.db.models.signals import pre_delete
+import django
 from shop.models.cartmodel import CartItem
 from shop.models.productmodel import Product
 from shop.util.fields import CurrencyField
@@ -106,38 +109,9 @@ class Order(models.Model):
     payment_method = models.CharField(max_length=255, null=True,
             verbose_name=_('Payment method'))
     
-    # Addresses MUST be copied over to the order when it's created, however
-    # the fields must be nullable since sometimes we cannot create the address 
-    # fields right away (for instance when the shopper is a guest)
-    shipping_name = models.CharField(max_length=255, null=True,
-            verbose_name=_('Shipping name'))
-    shipping_address = models.CharField(max_length=255, null=True,
-            verbose_name=_('Shipping address'))
-    shipping_address2 = models.CharField(max_length=255, null=True,
-            verbose_name=_('Shipping addresses 2'))
-    shipping_city = models.CharField(max_length=255, null=True,
-            verbose_name=_('Shipping City'))
-    shipping_zip_code = models.CharField(max_length=20, null=True,
-            verbose_name=_('Shipping zip code'))
-    shipping_state = models.CharField(max_length=255, null=True,
-            verbose_name=_('Shipping state'))
-    shipping_country = models.CharField(max_length=255, null=True,
-            verbose_name=_('Shipping country'))
-    
-    billing_name = models.CharField(max_length=255, null=True,
-            verbose_name=_('Billing name'))
-    billing_address = models.CharField(max_length=255, null=True,
-            verbose_name=_('Billing address'))
-    billing_address2 = models.CharField(max_length=255, null=True,
-            verbose_name=_('Billing address 2'))
-    billing_city = models.CharField(max_length=255, null=True,
-            verbose_name=_('Billing city'))
-    billing_zip_code = models.CharField(max_length=20, null=True,
-            verbose_name=_('Billing zip code'))
-    billing_state = models.CharField(max_length=255, null=True,
-            verbose_name=_('Billing state'))
-    billing_country = models.CharField(max_length=255, null=True,
-            verbose_name=_('Billing country'))
+    shipping_address_text = models.TextField(_('Shipping address'), blank=True, null=True)
+    billing_address_text = models.TextField(_('Billing address'), blank=True, null=True)
+
 
     created = models.DateTimeField(auto_now_add=True,
             verbose_name=_('Created'))
@@ -183,28 +157,33 @@ class Order(models.Model):
     def get_absolute_url(self):
         return reverse('order_detail', kwargs={'pk': self.pk })
 
-    def set_billing_address(self, billing_address, billing_city, billing_zip_code, 
-        billing_state, billing_country, billing_name, billing_address2=''):
-        self.billing_name = billing_name
-        self.billing_address = billing_address
-        self.billing_address2 = billing_address2
-        self.billing_city = billing_city
-        self.billing_zip_code = billing_zip_code
-        self.billing_state = billing_state
-        self.billing_country = str(billing_country)
-        self.save()
+    def set_billing_address(self, billing_address):
+        """
+        Process billing_address trying to get as_text method from address
+        and copying.
+        You can override this method to process address more granulary
+        e.g. you can copy address instance and save FK to it in your order class
+        """
+        if  hasattr(billing_address, 'as_text'):
+            self.billing_address_text = billing_address.as_text()
+            self.save()
     
-    def set_shipping_address(self, shipping_address, shipping_city, 
-        shipping_zip_code, shipping_state, shipping_country, shipping_name,
-        shipping_address2=''):
-        self.shipping_name = shipping_name
-        self.shipping_address = shipping_address
-        self.shipping_address2 = shipping_address2
-        self.shipping_city = shipping_city
-        self.shipping_zip_code = shipping_zip_code
-        self.shipping_state = shipping_state
-        self.shipping_country = str(shipping_country)
-        self.save()
+    def set_shipping_address(self, shipping_address):
+        """
+        Process shipping_address trying to get as_text method from address
+        and copying.
+        You can override this method to process address more granulary
+        e.g. you can copy address instance and save FK to it in your order class
+        """
+        if hasattr(shipping_address, 'as_text'):
+            self.shipping_address_text = shipping_address.as_text()
+            self.save()
+
+
+# We need some magic to support django < 1.3 that has no support models.on_delete option
+f_kwargs = {}
+if django.VERSION >= (1, 3):
+    f_kwargs['on_delete'] = models.SET_NULL
 
 class OrderItem(models.Model):
     """
@@ -216,8 +195,9 @@ class OrderItem(models.Model):
     
     product_reference = models.CharField(max_length=255,
             verbose_name=_('Product reference'))
-    product_name = models.CharField(max_length=255,
+    product_name = models.CharField(max_length=255, null=True, blank=True,
             verbose_name=_('Product name'))
+    product = models.ForeignKey(Product, verbose_name=_('Product'), null=True, blank=True, **f_kwargs)
     unit_price = CurrencyField(verbose_name=_('Unit price'))
     quantity = models.IntegerField(verbose_name=_('Quantity'))
     
@@ -228,11 +208,22 @@ class OrderItem(models.Model):
         app_label = 'shop'
         verbose_name = _('Order item')
         verbose_name_plural = _('Order items')
-    
-    @property
-    def product(self):
-        return Product.objects.get(pk=self.product_reference)
 
+
+    def save(self, *args, **kwargs):
+        if self.product:
+            self.product_name = self.product.name
+        super(OrderItem, self).save(*args, **kwargs)
+
+
+# Now we clear refrence to product from every OrderItem
+def clear_products(sender, instance, using):
+    for oi in OrderItem.objects.filter(product=instance):
+        oi.product = None
+        oi.save()
+
+if django.VERSION < (1, 3):
+    pre_delete.connect(clear_products, sender=Product)
 
 class OrderExtraInfo(models.Model):
     """
