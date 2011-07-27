@@ -179,13 +179,20 @@ class BaseCart(models.Model):
         that for the order items (since they are legally binding after the
         "purchase" button was pressed)
         """
-        from shop.models import CartItem
+        from shop.models import CartItem, Product
+        
+        # This is a ghetto "select_related" for polymorphic models. 2 queries!
         items = CartItem.objects.filter(cart=self)
+        product_ids = [item.product_id for item in items]
+        products = Product.objects.filter(id__in=product_ids)
+        products_dict = dict([(p.id, p) for p in products])
+        
         self.extra_price_fields = [] # Reset the price fields
         self.subtotal_price = Decimal('0.0') # Reset the subtotal
 
         for item in items: # For each OrderItem (order line)...
-            self.subtotal_price = self.subtotal_price + item.update(self)
+            item.product = products_dict[item.product_id] #This is still the ghetto select_related
+            self.subtotal_price = self.subtotal_price + item.update()
             item.save()
         
         self.current_total = self.subtotal_price
@@ -239,7 +246,7 @@ class BaseCartItem(models.Model):
         self.line_total = Decimal('0.0')
         self.current_total = Decimal('0.0') # Used by cart modifiers
 
-    def update(self, cart):
+    def update(self):
         self.extra_price_fields = [] # Reset the price fields
         self.line_subtotal = self.product.get_price() * self.quantity
         self.current_total = self.line_subtotal
@@ -247,7 +254,7 @@ class BaseCartItem(models.Model):
         for modifier in cart_modifiers_pool.get_modifiers_list():
             # We now loop over every registered price modifier,
             # most of them will simply add a field to extra_payment_fields
-            modifier.process_cart_item(self, cart)
+            modifier.process_cart_item(self)
         
         self.line_total = self.current_total
         return self.line_total
