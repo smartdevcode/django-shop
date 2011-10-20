@@ -35,3 +35,4 @@ class OrderDetailView(ShopDetailView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(OrderDetailView, self).dispatch(*args, **kwargs)
+

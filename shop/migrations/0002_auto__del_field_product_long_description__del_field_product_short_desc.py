@@ -1,4 +1,3 @@
-# flake8: noqa
 # encoding: utf-8
 import datetime
 from south.db import db
@@ -8,7 +7,7 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-
+        
         # Deleting field 'Product.long_description'
         db.delete_column('shop_product', 'long_description')
 
@@ -17,7 +16,7 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
-
+        
         # User chose to not deal with backwards NULL issues for 'Product.long_description'
         raise RuntimeError("Cannot reverse this migration. 'Product.long_description' and its values cannot be restored.")
 

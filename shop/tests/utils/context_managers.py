@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
+
 """
 Borrowed from Django CMS. This is too useful to live without
 """
 from django.conf import settings
 
-
 class NULL:
     pass
-
 
 class SettingsOverride(object):
     """
@@ -34,4 +33,5 @@ class SettingsOverride(object):
             if value is not NULL:
                 setattr(settings, key, value)
             else:
-                delattr(settings, key)  # do not pollute the context!
+                delattr(settings,key) # do not pollute the context!
+

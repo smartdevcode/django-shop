@@ -13,14 +13,12 @@ class CurrencyField(DecimalField):
             del kwargs['max_digits']
         if 'decimal_places' in kwargs.keys():
             del kwargs['decimal_places']
-        # get "default" or 0.00
-        default = kwargs.get('default', Decimal('0.00'))
+        default = kwargs.get('default', Decimal('0.00')) # get "default" or 0.00
         if 'default' in kwargs.keys():
             del kwargs['default']
-        super(CurrencyField, self).__init__(max_digits=12,
-            decimal_places=2, default=default, **kwargs)
+        return super(CurrencyField,self).__init__(max_digits=12,decimal_places=2,default=default,**kwargs)
 
-    def south_field_triple(self):  # pragma: no cover
+    def south_field_triple(self): # pragma: no cover
         """
         Returns a suitable description of this field for South.
         This is excluded from coverage reports since it is pretty much a piece
