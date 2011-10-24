@@ -164,15 +164,6 @@ class BaseCart(models.Model):
         cart_item.delete()
         self.save()
 
-    def get_updated_cart_items(self):
-        """
-        Returns updated cart items after update() has been called and
-        cart modifiers have been processed for all cart items.
-        """
-        assert hasattr(self, '_updated_cart_items'),\
-                "Cart needs to be updated before calling get_updated_cart_items."
-        return self._updated_cart_items
-
     def update(self, state=None):
         """
         This should be called whenever anything is changed in the cart (added
@@ -209,7 +200,7 @@ class BaseCart(models.Model):
         for modifier in cart_modifiers_pool.get_modifiers_list():
             modifier.pre_process_cart(self, state)
 
-        for item in items: # For each CartItem (order line)...
+        for item in items: # For each OrderItem (order line)...
             item.product = products_dict[item.product_id] #This is still the ghetto select_related
             self.subtotal_price = self.subtotal_price + item.update(state)
         
@@ -226,9 +217,6 @@ class BaseCart(models.Model):
         # it is displayed
         for modifier in cart_modifiers_pool.get_modifiers_list():
             modifier.post_process_cart(self, state)
-
-        # Cache updated cart items
-        self._updated_cart_items = items
 
     def empty(self):
         """
@@ -433,6 +421,6 @@ class BaseOrderItem(models.Model):
         verbose_name_plural = _('Order items')
 
     def save(self, *args, **kwargs):
-        if self.product:
+        if not self.product_name and self.product:
             self.product_name = self.product.get_name()
         super(BaseOrderItem, self).save(*args, **kwargs)
